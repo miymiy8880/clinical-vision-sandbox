@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroVision: Clinical CNN Research Hub</title>
+    <title>VisceralVision: Clinical CNN Research Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body { background-color: #090d16; }
@@ -12,7 +12,7 @@
 </head>
 <body class="text-slate-100 min-h-screen p-6 font-sans">
 
-  <header class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
+    <header class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
         <div>
             <h1 class="text-2xl font-bold tracking-wider text-teal-400">VISCERALVISION v1.0</h1>
             <p class="text-xs text-slate-400 uppercase tracking-widest">Abdominal CT Feature Extraction Sandbox</p>
@@ -34,7 +34,7 @@
         <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-xl flex flex-col gap-6">
             <div>
                 <h2 class="text-lg font-semibold text-slate-200 mb-2">1. Patient Scan Input</h2>
-                <p class="text-xs text-slate-400">Upload a scan slice (MRI, CT, or X-Ray) to process through the diagnostic matrix simulator.</p>
+                <p class="text-xs text-slate-400">Upload an abdominal scan slice (CT or MRI) to process through the diagnostic matrix simulator.</p>
             </div>
 
             <label class="border-2 border-dashed border-slate-700 hover:border-teal-500 rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer transition bg-slate-950/40">
@@ -45,8 +45,8 @@
 
             <div class="border-t border-slate-800 pt-4">
                 <span class="block text-xs font-mono text-slate-500 mb-2">OR USE CLINICAL TEMPLATE SAMPLES:</span>
-                <button onclick="loadSample('https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=400')" class="w-full text-left bg-slate-950 hover:bg-slate-800 p-2 rounded text-xs border border-slate-800 text-slate-300 font-mono mb-2">
-                    ⚡ Load Sample Brain MRI Slice
+                <button onclick="loadSample('https://i.ibb.co/3ykSWhX/mri-abdomen11.jpg')" class="w-full text-left bg-slate-950 hover:bg-slate-800 p-2 rounded text-xs border border-slate-800 text-slate-300 font-mono mb-2">
+                    ⚡ Load Active Abdominal CT Slice
                 </button>
             </div>
 
@@ -87,7 +87,7 @@
 
     <script>
         let imgObj = new Image();
-        imgObj.crossOrigin = "anonymous"; // Prevents security errors for web URLs
+        imgObj.crossOrigin = "anonymous"; 
 
         function handleImage(input) {
             if (input.files && input.files[0]) {
@@ -117,29 +117,26 @@
                 ctxs[id].drawImage(imgObj, 0, 0, el.width, el.height);
             });
 
-            // Extract pixels for mathematical alteration (simulating a CNN layer convolution)
             const w = 240; const h = 240;
             
             // --- 1. Layer 1.1: Edge Detector Matrix Mapping ---
             let edgeData = ctxs['canvasEdges'].getImageData(0, 0, w, h);
             let d1 = edgeData.data;
-            // Simple edge detection loop: subtract adjacent pixels to isolate sharp transitions
             for (let i = 0; i < d1.length; i += 4) {
                 let v = (d1[i] + d1[i+1] + d1[i+2]) / 3;
                 let nextV = (d1[i+4] + d1[i+5] + d1[i+6]) / 3 || v;
-                let diff = Math.abs(v - nextV) * 4; // Amplify the contrast boundary
-                d1[i] = diff; d1[i+1] = diff * 1.2; d1[i+2] = diff * 1.1; // Tint teal
+                let diff = Math.abs(v - nextV) * 4; 
+                d1[i] = diff; d1[i+1] = diff * 1.2; d1[i+2] = diff * 1.1; 
             }
             ctxs['canvasEdges'].putImageData(edgeData, 0, 0);
 
-            // --- 2. Layer 2.3: Contrast/Lesion Optimization ---
+            // --- 2. Layer 2.3: Contrast Optimization ---
             let contrastData = ctxs['canvasContrast'].getImageData(0, 0, w, h);
             let d2 = contrastData.data;
             for (let i = 0; i < d2.length; i += 4) {
-                // Apply a math threshold step function to accentuate dark vs bright tissue regions
                 d2[i] = d2[i] > 110 ? 255 : d2[i] * 0.4;
                 d2[i+1] = d2[i+1] > 110 ? 150 : d2[i+1] * 0.2;
-                d2[i+2] = d2[i+2] > 110 ? 255 : d2[i+2] * 0.8; // Violet tint mapping
+                d2[i+2] = d2[i+2] > 110 ? 255 : d2[i+2] * 0.8; 
             }
             ctxs['canvasContrast'].putImageData(contrastData, 0, 0);
 
@@ -148,21 +145,19 @@
             let d3 = heatData.data;
             for (let i = 0; i < d3.length; i += 4) {
                 let intensity = (d3[i] + d3[i+1] + d3[i+2]) / 3;
-                // Map intensity thresholds into a pseudo thermal color lookup array
-                if (intensity > 140) { // High focal attention (Red)
+                if (intensity > 140) { 
                     d3[i] = 255; d3[i+1] = 50; d3[i+2] = 50;
-                } else if (intensity > 70) { // Medium focus (Amber/Yellow)
+                } else if (intensity > 70) { 
                     d3[i] = 230; d3[i+1] = 180; d3[i+2] = 30;
-                } else { // Low focus area background (Dark indigo)
+                } else { 
                     d3[i] = 20; d3[i+1] = 25; d3[i+2] = 60;
                 }
             }
             ctxs['canvasHeatmap'].putImageData(heatData, 0, 0);
         }
 
-        // Run default sample automatically on load
-        loadSample('https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=400');
-    </script>// Run your exact uploaded abdominal CT scan automatically on load
+        // Run your exact abdominal CT scan automatically on load
         loadSample('https://i.ibb.co/3ykSWhX/mri-abdomen11.jpg');
+    </script>
 </body>
 </html>
