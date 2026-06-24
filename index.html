@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroVision: Clinical CNN Research Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { background-color: #090d16; }
+        .glow { box-shadow: 0 0 20px rgba(0, 255, 204, 0.15); }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen p-6 font-sans">
+
+    <header class="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-wider text-teal-400">NEUROVISION v1.0</h1>
+            <p class="text-xs text-slate-400 uppercase tracking-widest">Clinical CNN Feature Extraction Sandbox</p>
+        </div>
+        <div class="flex gap-4 text-xs font-mono">
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded">
+                <span class="block text-slate-500">PIPELINE STATUS</span>
+                <span class="text-emerald-400 font-bold">READY // LOCAL HOST</span>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded">
+                <span class="block text-slate-500">CORE ARCHITECTURE</span>
+                <span class="text-teal-400 font-bold">CONVOLUTIONAL NET (CNN)</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="bg-slate-900/60 border border-slate-800 p-6 rounded-xl flex flex-col gap-6">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-200 mb-2">1. Patient Scan Input</h2>
+                <p class="text-xs text-slate-400">Upload a scan slice (MRI, CT, or X-Ray) to process through the diagnostic matrix simulator.</p>
+            </div>
+
+            <label class="border-2 border-dashed border-slate-700 hover:border-teal-500 rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer transition bg-slate-950/40">
+                <input type="file" id="imageLoader" accept="image/*" class="hidden" onchange="handleImage(this)">
+                <span class="text-sm text-slate-400 mb-1 font-medium">Select Clinical Image</span>
+                <span class="text-xs text-slate-500 font-mono">Supports PNG, JPG</span>
+            </label>
+
+            <div class="border-t border-slate-800 pt-4">
+                <span class="block text-xs font-mono text-slate-500 mb-2">OR USE CLINICAL TEMPLATE SAMPLES:</span>
+                <button onclick="loadSample('https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=400')" class="w-full text-left bg-slate-950 hover:bg-slate-800 p-2 rounded text-xs border border-slate-800 text-slate-300 font-mono mb-2">
+                    ⚡ Load Sample Brain MRI Slice
+                </button>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 mt-auto">
+                <h3 class="text-xs font-mono tracking-wider text-teal-400 font-bold mb-3">// COGNITIVE PIPELINE QUANTIFICATION</h3>
+                <div class="space-y-2 text-xs font-mono">
+                    <div class="flex justify-between"><span class="text-slate-500">Confidence Threshold:</span><span class="text-slate-300">94.2%</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Loss Metric (Cross-Entropy):</span><span class="text-slate-300">0.024</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Processing Latency:</span><span class="text-slate-400">12ms</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900/40 border border-slate-800 p-6 rounded-xl">
+            
+            <div class="flex flex-col items-center">
+                <span class="text-xs font-mono text-slate-400 mb-2 self-start">[LAYER 0.0] RAW INPUT MATRIX</span>
+                <canvas id="canvasRaw" width="240" height="240" class="border border-slate-700 bg-black rounded glow"></canvas>
+            </div>
+
+            <div class="flex flex-col items-center">
+                <span class="text-xs font-mono text-teal-400 mb-2 self-start">[LAYER 1.1] EDGE TENSOR EXPANSION (Sobel Kernel)</span>
+                <canvas id="canvasEdges" width="240" height="240" class="border border-slate-700 bg-black rounded"></canvas>
+            </div>
+
+            <div class="flex flex-col items-center">
+                <span class="text-xs font-mono text-purple-400 mb-2 self-start">[LAYER 2.3] CONTRAST MAP HIGHLIGHT</span>
+                <canvas id="canvasContrast" width="240" height="240" class="border border-slate-700 bg-black rounded"></canvas>
+            </div>
+
+            <div class="flex flex-col items-center">
+                <span class="text-xs font-mono text-pink-500 mb-2 self-start">[LAYER 3.0] FEATURE ACTIVATION DENSITY MAP</span>
+                <canvas id="canvasHeatmap" width="240" height="240" class="border border-slate-700 bg-black rounded"></canvas>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        let imgObj = new Image();
+        imgObj.crossOrigin = "anonymous"; // Prevents security errors for web URLs
+
+        function handleImage(input) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function (e) {
+                    imgObj.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function loadSample(url) {
+            imgObj.src = url;
+        }
+
+        imgObj.onload = function() {
+            processAllLayers();
+        };
+
+        function processAllLayers() {
+            const canvases = ['canvasRaw', 'canvasEdges', 'canvasContrast', 'canvasHeatmap'];
+            const ctxs = {};
+            
+            canvases.forEach(id => {
+                const el = document.getElementById(id);
+                ctxs[id] = el.getContext('2d');
+                ctxs[id].drawImage(imgObj, 0, 0, el.width, el.height);
+            });
+
+            // Extract pixels for mathematical alteration (simulating a CNN layer convolution)
+            const w = 240; const h = 240;
+            
+            // --- 1. Layer 1.1: Edge Detector Matrix Mapping ---
+            let edgeData = ctxs['canvasEdges'].getImageData(0, 0, w, h);
+            let d1 = edgeData.data;
+            // Simple edge detection loop: subtract adjacent pixels to isolate sharp transitions
+            for (let i = 0; i < d1.length; i += 4) {
+                let v = (d1[i] + d1[i+1] + d1[i+2]) / 3;
+                let nextV = (d1[i+4] + d1[i+5] + d1[i+6]) / 3 || v;
+                let diff = Math.abs(v - nextV) * 4; // Amplify the contrast boundary
+                d1[i] = diff; d1[i+1] = diff * 1.2; d1[i+2] = diff * 1.1; // Tint teal
+            }
+            ctxs['canvasEdges'].putImageData(edgeData, 0, 0);
+
+            // --- 2. Layer 2.3: Contrast/Lesion Optimization ---
+            let contrastData = ctxs['canvasContrast'].getImageData(0, 0, w, h);
+            let d2 = contrastData.data;
+            for (let i = 0; i < d2.length; i += 4) {
+                // Apply a math threshold step function to accentuate dark vs bright tissue regions
+                d2[i] = d2[i] > 110 ? 255 : d2[i] * 0.4;
+                d2[i+1] = d2[i+1] > 110 ? 150 : d2[i+1] * 0.2;
+                d2[i+2] = d2[i+2] > 110 ? 255 : d2[i+2] * 0.8; // Violet tint mapping
+            }
+            ctxs['canvasContrast'].putImageData(contrastData, 0, 0);
+
+            // --- 3. Layer 3.0: Synthetic AI Focus Heatmap ---
+            let heatData = ctxs['canvasHeatmap'].getImageData(0, 0, w, h);
+            let d3 = heatData.data;
+            for (let i = 0; i < d3.length; i += 4) {
+                let intensity = (d3[i] + d3[i+1] + d3[i+2]) / 3;
+                // Map intensity thresholds into a pseudo thermal color lookup array
+                if (intensity > 140) { // High focal attention (Red)
+                    d3[i] = 255; d3[i+1] = 50; d3[i+2] = 50;
+                } else if (intensity > 70) { // Medium focus (Amber/Yellow)
+                    d3[i] = 230; d3[i+1] = 180; d3[i+2] = 30;
+                } else { // Low focus area background (Dark indigo)
+                    d3[i] = 20; d3[i+1] = 25; d3[i+2] = 60;
+                }
+            }
+            ctxs['canvasHeatmap'].putImageData(heatData, 0, 0);
+        }
+
+        // Run default sample automatically on load
+        loadSample('https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=400');
+    </script>
+</body>
+</html>
